@@ -264,6 +264,9 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_spl
 def check_files(SERIE_PATH,wav_path):
     with open(os.path.join(SERIE_PATH,"file_list.txt"),'r') as file:
         file_list=set(file.read().split("\n"))
+    with open(os.path.join(SERIE_PATH,"episodes.txt"),'r') as file:
+        episodes=file.read().split("\n")
+        episodes=set([episode.split(',')[0] for episode in episodes])
     wav_uris=[]
     for file_name in sorted(os.listdir(wav_path)):
         uri,extension=os.path.splitext(os.path.splitext(file_name)[0])
@@ -271,9 +274,13 @@ def check_files(SERIE_PATH,wav_path):
             wav_uris.append(uri)
     wav_uris=set(wav_uris)
     if file_list - wav_uris:
-        warnings.warn(f'{file_list - wav_uris} are not in {wav_path}')
+        warnings.warn(f'{sorted(file_list - wav_uris)} are not in {wav_path}')
     if wav_uris - file_list:
-        warnings.warn(f'{wav_uris - file_list} are not in {SERIE_PATH}')
+        warnings.warn(f'{sorted(wav_uris - file_list)} are not in {SERIE_PATH}')
+    if file_list - episodes:
+        warnings.warn(f'{sorted(file_list - episodes)} are not in episodes.txt')
+    if episodes - file_list:
+        warnings.warn(f'{sorted(episodes - file_list)} are not in {SERIE_PATH}')
     print("Done checking files. (No warning means everything is okay.)")
 
 def split_regions(file_path,threshold):
