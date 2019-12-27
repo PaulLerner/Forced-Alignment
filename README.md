@@ -52,7 +52,7 @@ e.g. :
 
 ### Actual forced-alignment - VRBS (`forced-alignment.sh`)
 
-You should then launch `forced-alignment.sh` to align audio and transcription. Unfortunately, it requires vrbs which is closed source.
+You should then launch `forced-alignment.sh` to align audio and transcription. Unfortunately, it requires vrbs which is closed source. Note that it cannot handle files more than 200 MB large.
 
 Usage :
 ```bash
