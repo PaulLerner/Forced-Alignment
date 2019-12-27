@@ -6,7 +6,7 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 Usage:
     forced-alignment.py preprocess <serie_uri> <plumcot_path> [--wav_path=<wav_path>]
     forced-alignment.py postprocess <serie_uri> <plumcot_path> <serie_split> [options]
-    forced-alignment.py check_files <serie_uri> <plumcot_path> <wav_path>
+    forced-alignment.py check_files <serie_uri> <plumcot_path> [--wav_path=<wav_path>]
     forced-alignment.py split_regions <file_path> [--threshold]
     forced-alignment.py update_RTTM <rttm_path> <uem_path> <json_path> <file_uri>
     forced-alignment.py update_aligned <aligned_path> <json_path> <file_uri>
@@ -267,16 +267,17 @@ def check_files(SERIE_PATH,wav_path):
     with open(os.path.join(SERIE_PATH,"episodes.txt"),'r') as file:
         episodes=file.read().split("\n")
         episodes=set([episode.split(',')[0] for episode in episodes])
-    wav_uris=[]
-    for file_name in sorted(os.listdir(wav_path)):
-        uri,extension=os.path.splitext(os.path.splitext(file_name)[0])
-        if extension == '.en48kHz':
-            wav_uris.append(uri)
-    wav_uris=set(wav_uris)
-    if file_list - wav_uris:
-        warnings.warn(f'{sorted(file_list - wav_uris)} are not in {wav_path}')
-    if wav_uris - file_list:
-        warnings.warn(f'{sorted(wav_uris - file_list)} are not in {SERIE_PATH}')
+    if wav_path:
+        wav_uris=[]
+        for file_name in sorted(os.listdir(wav_path)):
+            uri,extension=os.path.splitext(os.path.splitext(file_name)[0])
+            if extension == '.en48kHz':
+                wav_uris.append(uri)
+        wav_uris=set(wav_uris)
+        if file_list - wav_uris:
+            warnings.warn(f'{sorted(file_list - wav_uris)} are not in {wav_path}')
+        if wav_uris - file_list:
+            warnings.warn(f'{sorted(wav_uris - file_list)} are not in {SERIE_PATH}')
     if file_list - episodes:
         warnings.warn(f'{sorted(file_list - episodes)} are not in episodes.txt')
     if episodes - file_list:
@@ -363,16 +364,14 @@ if __name__ == '__main__':
         transcripts_path=args["--transcripts_path"] if args["--transcripts_path"] else os.path.join(SERIE_PATH,"transcripts")
 
         if args['check_files']:
-            wav_path=os.path.join(args["<wav_path>"],serie_uri)
+            wav_path=os.path.join(args['--wav_path'],serie_uri) if args['--wav_path'] else None
             check_files(SERIE_PATH,wav_path)
         elif args['preprocess']:
             print("adding brackets around speakers id")
             write_brackets(SERIE_PATH,transcripts_path)
             print("done, you should now launch vrbs before converting")
-            wav_path=os.path.join(args['--wav_path'],serie_uri)
-            if wav_path:
-                check_files(SERIE_PATH,wav_path)
-
+            wav_path=os.path.join(args['--wav_path'],serie_uri) if args['--wav_path'] else None
+            check_files(SERIE_PATH,wav_path)
         elif args['postprocess']:
             aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
             if not os.path.exists(aligned_path):
