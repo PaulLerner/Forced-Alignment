@@ -275,13 +275,27 @@ def check_files(SERIE_PATH,wav_path):
                 wav_uris.append(uri)
         wav_uris=set(wav_uris)
         if file_list - wav_uris:
-            warnings.warn(f'{sorted(file_list - wav_uris)} are not in {wav_path}')
+            warnings.warn(
+                f'{sorted(file_list - wav_uris)} are not in {wav_path}.'
+                f'(but are in {SERIE_PATH})'
+            )
         if wav_uris - file_list:
-            warnings.warn(f'{sorted(wav_uris - file_list)} are not in {SERIE_PATH}')
+            warnings.warn(
+                f'{sorted(wav_uris - file_list)} are not in {SERIE_PATH}'
+                f'(but are in {wav_path})'
+            )
+    else:
+        warnings.warn("--wav_path was not specified. checking only episodes.txt")
     if file_list - episodes:
-        warnings.warn(f'{sorted(file_list - episodes)} are not in episodes.txt')
+        warnings.warn(
+            f'{sorted(file_list - episodes)} are not in episodes.txt'
+            f'(but are in {SERIE_PATH})'
+        )
     if episodes - file_list:
-        warnings.warn(f'{sorted(episodes - file_list)} are not in {SERIE_PATH}')
+        warnings.warn(
+            f'{sorted(episodes - file_list)} are not in {SERIE_PATH}'
+            f'(but are in episodes.txt)'
+        )
     print("Done checking files. (No warning means everything is okay.)")
 
 def split_regions(file_path,threshold):
