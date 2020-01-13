@@ -129,7 +129,7 @@ def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
             print("\rWriting file #{} to {}".format(file_counter,json_path),end="")
             file_counter+=1
             with open(json_path,"w") as file:
-                json.dump(gecko_json,file)
+                json.dump(gecko_json,file,indent=4)
     if file_counter==0:
         raise ValueError(f"no xml files were found in {ALIGNED_PATH}")
     print()#new line for prettier print
@@ -318,7 +318,7 @@ def split_regions(file_path,threshold):
     file_uri,_=os.path.splitext(file_name)
     new_path=os.path.join(dir_path,f'{file_uri}.{threshold}.json')
     with open(new_path,'w') as file:
-        json.dump(gecko_json,file)
+        json.dump(gecko_json,file,indent=4)
     print(f"succesfully dumped {new_path}")
 
 def update_RTTM(rttm_path, uem_path, json_path, file_uri):
