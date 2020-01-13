@@ -10,6 +10,7 @@ Usage:
     forced-alignment.py split_regions <file_path> [--threshold]
     forced-alignment.py update_RTTM <rttm_path> <uem_path> <json_path> <file_uri>
     forced-alignment.py update_aligned <aligned_path> <json_path> <file_uri>
+    forced-alignment.py write_RTTM <json_path> <file_uri>
     forced-alignment.py -h | --help
 
 Arguments:
@@ -63,6 +64,7 @@ import json
 import xml.etree.ElementTree as ET
 import re
 import os
+from pathlib import Path
 
 #Meta
 from typing import TextIO,Union
@@ -321,6 +323,7 @@ def split_regions(file_path,threshold):
         json.dump(gecko_json,file,indent=4)
     print(f"succesfully dumped {new_path}")
 
+
 def update_RTTM(rttm_path, uem_path, json_path, file_uri):
     if file_uri not in json_path:
         warnings.warn(f"replacing {file_uri} in RTTM by {json_path}")
@@ -342,6 +345,18 @@ def update_RTTM(rttm_path, uem_path, json_path, file_uri):
     with open(uem_path, 'w') as file:
         for annotated in uem.values():
             annotated.write_uem(file)
+    print(f"succesfully dumped {rttm_path} and {uem_path}")
+
+def write_RTTM(json_path, file_uri):
+    rttm_path=Path(json_path.parent,f"{file_uri}.manual.rttm")
+    uem_path=Path(json_path.parent,f"{file_uri}.manual.uem")
+    with open(json_path, 'r') as file:
+        gecko_JSON=json.load(file)
+    annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON, file_uri, 'speaker', manual=True)
+    with open(rttm_path,'w') as file:
+        annotation.write_rttm(file)
+    with open(uem_path, 'w') as file:
+        annotated.write_uem(file)
     print(f"succesfully dumped {rttm_path} and {uem_path}")
 
 def update_aligned(aligned_path, json_path, file_uri):
@@ -371,6 +386,10 @@ if __name__ == '__main__':
         json_path=args['<json_path>']
         file_uri=args['<file_uri>']
         update_aligned(aligned_path, json_path, file_uri)
+    elif args['write_RTTM']:
+        json_path=Path(args['<json_path>'])
+        file_uri=args['<file_uri>']
+        write_RTTM(json_path,file_uri)
     else:
         serie_uri=args["<serie_uri>"]
         plumcot_path=args["<plumcot_path>"]
