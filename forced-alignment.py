@@ -6,7 +6,7 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 Usage:
     forced-alignment.py preprocess <serie_uri> <plumcot_path> [--wav_path=<wav_path> --aligned_path=<aligned_path>]
     forced-alignment.py postprocess <serie_uri> <plumcot_path> <serie_split> [options]
-    forced-alignment.py check_files <serie_uri> <plumcot_path> [--wav_path=<wav_path>]
+    forced-alignment.py check_files <serie_uri> <plumcot_path> [--wav_path=<wav_path> --aligned_path=<aligned_path>]
     forced-alignment.py split_regions <file_path> [--threshold]
     forced-alignment.py update_RTTM <rttm_path> <uem_path> <json_path> <file_uri>
     forced-alignment.py update_aligned <aligned_path> <json_path> <file_uri>
@@ -264,7 +264,7 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_spl
         file.write("\n".join(test_list))
     print("\nDone, succefully wrote the rttm file to {}\n and the uem file to {}".format(ANNOTATION_PATH,ANNOTATED_PATH))
 
-def check_files(SERIE_PATH,wav_path):
+def check_files(SERIE_PATH,wav_path,aligned_path):
     with open(os.path.join(SERIE_PATH,"file_list.txt"),'r') as file:
         file_list=set(file.read().split("\n"))
     with open(os.path.join(SERIE_PATH,"episodes.txt"),'r') as file:
@@ -288,7 +288,26 @@ def check_files(SERIE_PATH,wav_path):
                 f'(but are in {wav_path}).'
             )
     else:
-        warnings.warn("--wav_path was not specified. checking only episodes.txt")
+        warnings.warn("--wav_path was not specified.")
+    if aligned_path:
+        aligned_uris=[]
+        for file_name in sorted(os.listdir(aligned_path)):
+            uri,extension=os.path.splitext(os.path.splitext(file_name)[0])
+            if extension == '.xml':
+                aligned_uris.append(uri)
+        aligned_uris=set(aligned_uris)
+        if file_list - aligned_uris:
+            warnings.warn(
+                f'{sorted(file_list - aligned_uris)} are not in {aligned_path} '
+                f'(but are in {SERIE_PATH}).'
+            )
+        if aligned_uris - file_list:
+            warnings.warn(
+                f'{sorted(aligned_uris - file_list)} are not in {SERIE_PATH} '
+                f'(but are in {aligned_path}).'
+            )
+    else:
+        warnings.warn("--aligned_path was not specified.")
     if file_list - episodes:
         warnings.warn(
             f'{sorted(file_list - episodes)} are not in episodes.txt '
@@ -396,21 +415,19 @@ if __name__ == '__main__':
         plumcot_path=args["<plumcot_path>"]
         SERIE_PATH=os.path.join(plumcot_path,"Plumcot","data",serie_uri)
         transcripts_path=args["--transcripts_path"] if args["--transcripts_path"] else os.path.join(SERIE_PATH,"transcripts")
-
+        aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
         if args['check_files']:
             wav_path=os.path.join(args['--wav_path'],serie_uri) if args['--wav_path'] else None
-            check_files(SERIE_PATH,wav_path)
+            check_files(SERIE_PATH,wav_path,aligned_path)
         elif args['preprocess']:
             print("adding brackets around speakers id")
             write_brackets(SERIE_PATH,transcripts_path)
             print("done, you should now launch vrbs before converting")
             wav_path=os.path.join(args['--wav_path'],serie_uri) if args['--wav_path'] else None
-            check_files(SERIE_PATH,wav_path)
-            aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
             if not os.path.exists(aligned_path):
                 os.mkdir(aligned_path)
+            check_files(SERIE_PATH,wav_path,aligned_path=None)
         elif args['postprocess']:
-            aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
             serie_split={}
             for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
                 serie_split[key]=list(map(int,set.split("-")))
