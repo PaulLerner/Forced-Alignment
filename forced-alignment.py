@@ -28,15 +28,16 @@ Arguments:
     <file_uri>                              uri of the file you corrected (should be in the RTTM file)
     <aligned_path>                          Output of postprocess
 
+Common options:
+    --aligned_path=<aligned_path>           Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/forced-alignment
+
 preprocess options:
     --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
     --wav_path=<wav_path>                   Checks that all files in file_list.txt are in <wav_path>
                                             and vice-versa. Defaults to not checking.
-    --aligned_path=<aligned_path>           Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/forced-alignment
 
 postprocess options:
     --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
-    --aligned_path=<aligned_path>           Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/forced-alignment
     --expected_time=<expected_time>         `float`, Optional.
                                             Threshold (in seconds) under which the total duration of speech time
                                             is suspicious (warns the user).
