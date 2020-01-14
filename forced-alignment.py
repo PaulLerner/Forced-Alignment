@@ -4,7 +4,7 @@
 Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbredin/pyannote-db-plumcot) using vrbs.
 
 Usage:
-    forced-alignment.py preprocess <serie_uri> <plumcot_path> [--wav_path=<wav_path>]
+    forced-alignment.py preprocess <serie_uri> <plumcot_path> [--wav_path=<wav_path> --aligned_path=<aligned_path>]
     forced-alignment.py postprocess <serie_uri> <plumcot_path> <serie_split> [options]
     forced-alignment.py check_files <serie_uri> <plumcot_path> [--wav_path=<wav_path>]
     forced-alignment.py split_regions <file_path> [--threshold]
@@ -31,6 +31,7 @@ preprocess options:
     --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
     --wav_path=<wav_path>                   Checks that all files in file_list.txt are in <wav_path>
                                             and vice-versa. Defaults to not checking.
+    --aligned_path=<aligned_path>           Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/forced-alignment
 
 postprocess options:
     --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
@@ -386,10 +387,11 @@ if __name__ == '__main__':
             print("done, you should now launch vrbs before converting")
             wav_path=os.path.join(args['--wav_path'],serie_uri) if args['--wav_path'] else None
             check_files(SERIE_PATH,wav_path)
-        elif args['postprocess']:
             aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
             if not os.path.exists(aligned_path):
                 os.mkdir(aligned_path)
+        elif args['postprocess']:
+            aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
             serie_split={}
             for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
                 serie_split[key]=list(map(int,set.split("-")))
