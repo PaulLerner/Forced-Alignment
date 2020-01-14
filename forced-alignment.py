@@ -10,6 +10,7 @@ Usage:
     forced-alignment.py split_regions <file_path> [--threshold]
     forced-alignment.py update_RTTM <rttm_path> <uem_path> <json_path> <file_uri>
     forced-alignment.py update_aligned <aligned_path> <json_path> <file_uri>
+    forced-alignment.py write_RTTM <json_path> <file_uri>
     forced-alignment.py -h | --help
 
 Arguments:
@@ -64,6 +65,7 @@ import json
 import xml.etree.ElementTree as ET
 import re
 import os
+from pathlib import Path
 
 #Meta
 from typing import TextIO,Union
@@ -130,7 +132,7 @@ def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
             print("\rWriting file #{} to {}".format(file_counter,json_path),end="")
             file_counter+=1
             with open(json_path,"w") as file:
-                json.dump(gecko_json,file)
+                json.dump(gecko_json,file,indent=4)
     if file_counter==0:
         raise ValueError(f"no xml files were found in {ALIGNED_PATH}")
     print()#new line for prettier print
@@ -319,8 +321,9 @@ def split_regions(file_path,threshold):
     file_uri,_=os.path.splitext(file_name)
     new_path=os.path.join(dir_path,f'{file_uri}.{threshold}.json')
     with open(new_path,'w') as file:
-        json.dump(gecko_json,file)
+        json.dump(gecko_json,file,indent=4)
     print(f"succesfully dumped {new_path}")
+
 
 def update_RTTM(rttm_path, uem_path, json_path, file_uri):
     if file_uri not in json_path:
@@ -343,6 +346,18 @@ def update_RTTM(rttm_path, uem_path, json_path, file_uri):
     with open(uem_path, 'w') as file:
         for annotated in uem.values():
             annotated.write_uem(file)
+    print(f"succesfully dumped {rttm_path} and {uem_path}")
+
+def write_RTTM(json_path, file_uri):
+    rttm_path=Path(json_path.parent,f"{file_uri}.manual.rttm")
+    uem_path=Path(json_path.parent,f"{file_uri}.manual.uem")
+    with open(json_path, 'r') as file:
+        gecko_JSON=json.load(file)
+    annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON, file_uri, 'speaker', manual=True)
+    with open(rttm_path,'w') as file:
+        annotation.write_rttm(file)
+    with open(uem_path, 'w') as file:
+        annotated.write_uem(file)
     print(f"succesfully dumped {rttm_path} and {uem_path}")
 
 def update_aligned(aligned_path, json_path, file_uri):
@@ -372,6 +387,10 @@ if __name__ == '__main__':
         json_path=args['<json_path>']
         file_uri=args['<file_uri>']
         update_aligned(aligned_path, json_path, file_uri)
+    elif args['write_RTTM']:
+        json_path=Path(args['<json_path>'])
+        file_uri=args['<file_uri>']
+        write_RTTM(json_path,file_uri)
     else:
         serie_uri=args["<serie_uri>"]
         plumcot_path=args["<plumcot_path>"]
