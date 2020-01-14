@@ -274,7 +274,7 @@ def check_files(SERIE_PATH,wav_path,aligned_path):
         wav_uris=[]
         for file_name in sorted(os.listdir(wav_path)):
             uri,extension=os.path.splitext(os.path.splitext(file_name)[0])
-            if extension == '.en48kHz':
+            if extension == '.en16kHz':
                 wav_uris.append(uri)
         wav_uris=set(wav_uris)
         if file_list - wav_uris:
