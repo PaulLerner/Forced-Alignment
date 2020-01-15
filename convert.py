@@ -38,6 +38,13 @@ def xml_to_GeckoJSON(xml_root,raw_script):
                 "vrbs_id" : speech_segment.attrib['spkid']
                     }
                 current_speaker=word.text.strip()[1:-1]
+                if json_i>=len(gecko_json["monologues"]):
+                    warnings.warn(
+                        "\nThere is more speakers than lines."
+                        "\nCheck that there's no extra brackets in the transcripts."
+                        "\nBreaking"
+                        )
+                    break
                 gecko_json["monologues"][json_i]={
                     "speaker":speaker,
                     "terms":terms
@@ -88,6 +95,8 @@ def gecko_JSON_to_aligned(gecko_JSON, uri=None):
     """
     aligned=""
     for monologue in gecko_JSON["monologues"]:
+        if monologue==[]:
+            continue
         speaker_ids=monologue["speaker"]["id"].split("@")#defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
 
         for i,term in enumerate(monologue["terms"]):
@@ -134,6 +143,8 @@ def gecko_JSON_to_Annotation(gecko_JSON, uri=None, modality='speaker',
     annotation = Annotation(uri, modality)
     not_annotated = Timeline(uri=uri)
     for monologue in gecko_JSON["monologues"]:
+        if monologue==[]:
+            continue
         #defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
         speaker_ids=monologue["speaker"]["id"].split("@")
         if manual:
