@@ -204,7 +204,7 @@ def gecko_JSONs_to_aligned(ALIGNED_PATH):
     print("\ndone ;)")
 
 def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-    VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0):
+    VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0,expected_min_speech_time=0.0):
     """
     Converts gecko_JSON files to RTTM using pyannote `Annotation`.
     Also keeps a track of files in train, dev and test sets.
@@ -239,7 +239,7 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_spl
                 gecko_JSON=json.load(file)
             annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',
                 VRBS_CONFIDENCE_THRESHOLD,FORCED_ALIGNMENT_COLLAR,
-                EXPECTED_MIN_SPEECH_TIME, manual=False)
+                expected_min_speech_time, manual=False)
             with open(ANNOTATION_PATH,'a') as file:
                 annotation.write_rttm(file)
             with open(ANNOTATED_PATH,'a') as file:
