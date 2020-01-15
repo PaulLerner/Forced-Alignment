@@ -11,12 +11,16 @@ from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeat
 def xml_to_GeckoJSON(xml_root,raw_script):
     """
     Parameters:
-        xml_root : root of the xml tree defined by vrbs for forced alignment. root[3] should be SegmentList, a list of speech segments
-        raw_script : `str` : the script as defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
+        xml_root : root of the xml tree defined by vrbs for forced alignment.
+            root[3] should be SegmentList, a list of speech segments
+        raw_script : `str`
+            the script as defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
             Each line is a speech turn and the first (space-separated) token is the normalized speaker id.
+
     Returns:
         gecko_json : a JSON `dict` based on the demo file of https://github.com/gong-io/gecko/blob/master/samples/demo.json
-            should be written to a file using json.dump"""
+            should be written to a file using json.dump
+    """
     gecko_json=json.loads("""{
       "schemaVersion" : "2.0",
       "monologues" : [  ]
