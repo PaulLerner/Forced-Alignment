@@ -442,6 +442,7 @@ if __name__ == '__main__':
             write_id_aligned(aligned_path,transcripts_path)
             if do_this("Would you like to convert annotations from gecko_JSON to RTTM ?"):
                 gecko_JSONs_to_RTTM(aligned_path, annotation_path, annotated_path, serie_split,
+                 vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
             else:
                 print("Okay, no hard feelings")
             if do_this("Would you like to convert annotations from gecko_JSON to LIMSI-compliant 'aligned' ?"):
