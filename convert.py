@@ -129,7 +129,6 @@ def gecko_JSON_to_Annotation(gecko_JSON, uri=None, modality='speaker',
     """
     annotation = Annotation(uri, modality)
     not_annotated = Timeline(uri=uri)
-    total_speech_time=0.0
     for monologue in gecko_JSON["monologues"]:
         #defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
         speaker_ids=monologue["speaker"]["id"].split("@")
@@ -137,17 +136,14 @@ def gecko_JSON_to_Annotation(gecko_JSON, uri=None, modality='speaker',
             for speaker_id in speaker_ids:#most of the time there's only one
                 if speaker_id!='':#happens with "all@"
                     annotation[Segment(monologue["start"],monologue["end"]),speaker_id]=speaker_id
-                    total_speech_time+=monologue["end"]-monologue["start"]
         else:
             for i,term in enumerate(monologue["terms"]):
                 for speaker_id in speaker_ids:#most of the time there's only one
                     if speaker_id!='':#happens with "all@"
                         annotation[Segment(term["start"],term["end"]),speaker_id]=speaker_id
-                        total_speech_time+=term["end"]-term["start"]
                 if term["confidence"] <= confidence_threshold:
                     not_annotated.add(Segment(term["start"],term["end"]))
-    if total_speech_time<expected_min_speech_time:
-        warnings.warn(f"total speech time of {uri} is only {total_speech_time})")
+
     if manual:
         annotated=Timeline(
             [Segment(0.0,monologue["end"])],
@@ -156,4 +152,7 @@ def gecko_JSON_to_Annotation(gecko_JSON, uri=None, modality='speaker',
     else:
         annotation=annotation.support(collar)
         annotated=not_annotated.gaps(support=Segment(0.0,term["end"]))
+    total_speech_time=annotation.crop(annotated).get_timeline().duration()
+    if total_speech_time<expected_min_speech_time:
+        warnings.warn(f"total speech time of {uri} is only {total_speech_time})")
     return annotation, annotated
