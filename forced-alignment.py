@@ -308,7 +308,7 @@ def check_files(SERIE_PATH,wav_path,aligned_path):
     if aligned_path:
         aligned_uris=[]
         for file_name in sorted(os.listdir(aligned_path)):
-            uri,extension=os.path.splitext(os.path.splitext(file_name)[0])
+            uri,extension=os.path.splitext(file_name)
             if extension == '.xml':
                 aligned_uris.append(uri)
         aligned_uris=set(aligned_uris)
