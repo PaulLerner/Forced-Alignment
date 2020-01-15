@@ -115,18 +115,33 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
         file.write("\n".join(file_list)    )
     print("\nsuccesfully wrote file list to",os.path.join(SERIE_PATH,"file_list.txt"))
 
+XML_END=["</SegmentList>","</AudioDoc>"]
 
 def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
     """
     writes json files as defined in functions xml_to_GeckoJSON and aligned_to_id
     """
     file_counter=0
-    for file_name in os.listdir(ALIGNED_PATH):
+    for file_name in sorted(os.listdir(ALIGNED_PATH)):
         file_uri,extension=os.path.splitext(file_name)#file_uri should be common to xml and txt file
         if extension==".xml":
             with open(os.path.join(TRANSCRIPTS_PATH,file_uri+".txt"),"r") as file:
                 raw_script=file.read()
-            xml_tree=ET.parse(os.path.join(ALIGNED_PATH,file_name))
+            with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
+                raw_xml=file.read()
+                raw_xml=raw_xml.strip()
+                if raw_xml.split("\n")[-2:]!=XML_END:
+                    warnings.warn(f"{file_name} didn't close it's xml properly")
+                    #print(raw_xml.split("\n")[-2:],XML_END)
+                    raw_xml+="\n".join(XML_END)
+            try:
+                xml_tree=ET.ElementTree(ET.fromstring(raw_xml))
+            except ET.ParseError as e:
+                warnings.warn(
+                    f"\nxml.etree.ElementTree.ParseError: {e} "
+                    f"\nThis happened with {file_name}, skipping to next file"
+                    )
+                continue
             xml_root = xml_tree.getroot()
             gecko_json=xml_to_GeckoJSON(xml_root,raw_script)
             json_path=os.path.join(ALIGNED_PATH,file_uri+".json")
