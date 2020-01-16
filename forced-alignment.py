@@ -115,18 +115,33 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
         file.write("\n".join(file_list)    )
     print("\nsuccesfully wrote file list to",os.path.join(SERIE_PATH,"file_list.txt"))
 
+XML_END=["</SegmentList>","</AudioDoc>"]
 
 def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
     """
     writes json files as defined in functions xml_to_GeckoJSON and aligned_to_id
     """
     file_counter=0
-    for file_name in os.listdir(ALIGNED_PATH):
+    for file_name in sorted(os.listdir(ALIGNED_PATH)):
         file_uri,extension=os.path.splitext(file_name)#file_uri should be common to xml and txt file
         if extension==".xml":
             with open(os.path.join(TRANSCRIPTS_PATH,file_uri+".txt"),"r") as file:
                 raw_script=file.read()
-            xml_tree=ET.parse(os.path.join(ALIGNED_PATH,file_name))
+            with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
+                raw_xml=file.read()
+                raw_xml=raw_xml.strip()
+                if raw_xml.split("\n")[-2:]!=XML_END:
+                    warnings.warn(f"{file_name} didn't close it's xml properly")
+                    #print(raw_xml.split("\n")[-2:],XML_END)
+                    raw_xml+="\n".join(XML_END)
+            try:
+                xml_tree=ET.ElementTree(ET.fromstring(raw_xml))
+            except ET.ParseError as e:
+                warnings.warn(
+                    f"\nxml.etree.ElementTree.ParseError: {e} "
+                    f"\nThis happened with {file_name}, skipping to next file"
+                    )
+                continue
             xml_root = xml_tree.getroot()
             gecko_json=xml_to_GeckoJSON(xml_root,raw_script)
             json_path=os.path.join(ALIGNED_PATH,file_uri+".json")
@@ -204,7 +219,7 @@ def gecko_JSONs_to_aligned(ALIGNED_PATH):
     print("\ndone ;)")
 
 def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-    VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0):
+    VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0,expected_min_speech_time=0.0):
     """
     Converts gecko_JSON files to RTTM using pyannote `Annotation`.
     Also keeps a track of files in train, dev and test sets.
@@ -239,7 +254,7 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_spl
                 gecko_JSON=json.load(file)
             annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',
                 VRBS_CONFIDENCE_THRESHOLD,FORCED_ALIGNMENT_COLLAR,
-                EXPECTED_MIN_SPEECH_TIME, manual=False)
+                expected_min_speech_time, manual=False)
             with open(ANNOTATION_PATH,'a') as file:
                 annotation.write_rttm(file)
             with open(ANNOTATED_PATH,'a') as file:
@@ -293,7 +308,7 @@ def check_files(SERIE_PATH,wav_path,aligned_path):
     if aligned_path:
         aligned_uris=[]
         for file_name in sorted(os.listdir(aligned_path)):
-            uri,extension=os.path.splitext(os.path.splitext(file_name)[0])
+            uri,extension=os.path.splitext(file_name)
             if extension == '.xml':
                 aligned_uris.append(uri)
         aligned_uris=set(aligned_uris)
@@ -442,7 +457,7 @@ if __name__ == '__main__':
             write_id_aligned(aligned_path,transcripts_path)
             if do_this("Would you like to convert annotations from gecko_JSON to RTTM ?"):
                 gecko_JSONs_to_RTTM(aligned_path, annotation_path, annotated_path, serie_split,
-                 vrbs_confidence_threshold, forced_alignment_collar)
+                 vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
             else:
                 print("Okay, no hard feelings")
             if do_this("Would you like to convert annotations from gecko_JSON to LIMSI-compliant 'aligned' ?"):
