@@ -90,9 +90,9 @@ Type "n" or "no" (case insensitive) if you don't want to.
 *You're done !*
 
 ## Manual correction
-### Pre-processing for gecko (`region_split`)
+### Pre-processing for gecko (`split_regions`)
 
-If you plan on correcting the errors of the forced-alignment using gecko, you might want to use the `region_split` usage before-hand. So that the segment timings are more accurate.
+If you plan on correcting the errors of the forced-alignment using gecko, you might want to use `split_regions` before-hand. So that the segment timings are more accurate.
 
 ```
 Usage:
@@ -101,7 +101,7 @@ Usage:
 
 split_regions options:
     <file_path>                             Absolute path to the gecko-json file you want to preprocess
-    --threshold                             Duration of the silence (s) between two words so the region is split
+    --threshold                             Duration of the silence (s) between two words   so the region is split
 ```
 
 e.g. :
