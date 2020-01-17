@@ -101,6 +101,9 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
             for speech_turn in raw_script.split("\n"):
                 if speech_turn != '':
                     first_space=speech_turn.find(" ")
+                    #no space -> speaker who doesn't say anything -> useless
+                    if first_space < 0:
+                        continue
                     bracket_raw_script+="["+speech_turn[:first_space]+"]"+speech_turn[first_space:]+"\n"
 
             #writes back anonymized script .anonymous
