@@ -18,4 +18,4 @@ export FILE_URI=`head -n ${SGE_TASK_ID} $1 | tail -n 1`
 echo file uri : $FILE_URI
 echo serie uri : $2
 echo plumcot path : $3
-`which vrbs_align` -f /vol/work3/lefevre/dvd_extracted/$2/$FILE_URI.en16kHz.wav -o $3/Plumcot/data/$2/forced-alignment/$FILE_URI.xml -p -qs -v $3/Plumcot/data/$2/transcripts/$FILE_URI.brackets
+`which vrbs_align` -f /vol/work3/lefevre/dvd_extracted/$2/$FILE_URI.en16kHz.wav -o $3/Plumcot/data/$2/forced-alignment/$FILE_URI.xml -leng -qs -v $3/Plumcot/data/$2/transcripts/$FILE_URI.brackets
