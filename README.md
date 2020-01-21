@@ -101,7 +101,8 @@ Usage:
 
 split_regions options:
     <file_path>                             Absolute path to the gecko-json file you want to preprocess
-    --threshold                             Duration of the silence (s) between two words   so the region is split
+    --threshold                             Duration of the silence (s) between two words so the region is split.
+                                            Defaults to 0.15 seconds.
 ```
 
 e.g. :
