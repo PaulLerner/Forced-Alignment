@@ -97,8 +97,11 @@ def gecko_JSON_to_aligned(gecko_JSON, uri=None):
     for monologue in gecko_JSON["monologues"]:
         if monologue==[]:
             continue
-        speaker_ids=monologue["speaker"]["id"].split("@")#defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
 
+        # '@' defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
+        # '+' defined in https://github.com/gong-io/gecko/blob/master/app/geckoModule/constants.js#L35
+        speaker_ids=re.split("@|\+",monologue["speaker"]["id"])
+        
         for i,term in enumerate(monologue["terms"]):
             for speaker_id in speaker_ids:#most of the time there's only one
                 if speaker_id!='':#happens with "all@"
@@ -145,8 +148,9 @@ def gecko_JSON_to_Annotation(gecko_JSON, uri=None, modality='speaker',
     for monologue in gecko_JSON["monologues"]:
         if monologue==[]:
             continue
-        #defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
-        speaker_ids=monologue["speaker"]["id"].split("@")
+        # '@' defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
+        # '+' defined in https://github.com/gong-io/gecko/blob/master/app/geckoModule/constants.js#L35
+        speaker_ids=re.split("@|\+",monologue["speaker"]["id"])
         if manual:
             for speaker_id in speaker_ids:#most of the time there's only one
                 if speaker_id!='':#happens with "all@"
