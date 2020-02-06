@@ -226,7 +226,7 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_spl
     """
     Converts gecko_JSON files to RTTM using pyannote `Annotation`.
     Also keeps a track of files in train, dev and test sets.
-    Also adds annotated parts of the files to a UEM depending on FORCED_ALIGNMENT_COLLAR.
+    Also adds annotated parts of the files to a UEM depending on VRBS_CONFIDENCE_THRESHOLD.
 
     Parameters:
     -----------
