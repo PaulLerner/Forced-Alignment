@@ -41,7 +41,7 @@ postprocess options:
     --expected_time=<expected_time>         `float`, Optional.
                                             Threshold (in seconds) under which the total duration of speech time
                                             is suspicious (warns the user).
-                                            Defaults to never suspect anything (i.e. +infinity)
+                                            Defaults to never suspect anything (i.e. 0.0)
                                             Recommended : 200.0
     --conf_threshold=<conf_threshold>       `float`, the segments with confidence under `conf_threshold`
                                             won't be added to UEM file.
@@ -450,7 +450,7 @@ if __name__ == '__main__':
             serie_split={}
             for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
                 serie_split[key]=list(map(int,set.split("-")))
-            expected_min_speech_time=float(args["--expected_time"]) if args["--expected_time"] else float('inf')
+            expected_min_speech_time=float(args["--expected_time"]) if args["--expected_time"] else 0.0
             vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.0
             forced_alignment_collar=float(args["--collar"]) if args["--collar"] else 0.0
             annotation_path=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))

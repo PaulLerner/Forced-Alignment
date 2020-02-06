@@ -30,7 +30,7 @@ postprocess options:
     --expected_time=<expected_time>         `float`, Optional.
                                             Threshold (in seconds) under which the total duration of speech time
                                             is suspicious (warns the user).
-                                            Defaults to never suspect anything (i.e. +infinity)
+                                            Defaults to never suspect anything (i.e. 0.0)
                                             Recommended : 200.0
     --conf_threshold=<conf_threshold>       `float`, the segments with confidence under `conf_threshold`
                                             won't be added to UEM file.
