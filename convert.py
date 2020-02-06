@@ -101,12 +101,69 @@ def gecko_JSON_to_aligned(gecko_JSON, uri=None):
         # '@' defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
         # '+' defined in https://github.com/gong-io/gecko/blob/master/app/geckoModule/constants.js#L35
         speaker_ids=re.split("@|\+",monologue["speaker"]["id"])
-        
+
         for i,term in enumerate(monologue["terms"]):
             for speaker_id in speaker_ids:#most of the time there's only one
                 if speaker_id!='':#happens with "all@"
                     aligned+=f'{uri} {speaker_id} {term["start"]} {term["end"]} {term["text"].strip()} {term.get("confidence")}\n'
     return aligned
+
+def gecko_JSON_to_UEM(gecko_JSON, uri=None, modality='speaker',
+    confidence_threshold=0.0, collar=0.0, expected_min_speech_time=0.0):
+    """
+    Parameters:
+    -----------
+    gecko_JSON : `dict`
+        loaded from a Gecko-compliant JSON as defined in xml_to_GeckoJSON
+    uri (uniform resource identifier) : `str`
+        which identifies the annotation (e.g. episode number)
+        Default : None
+    modality : `str`
+        modality of the annotation as defined in https://github.com/pyannote/pyannote-core
+    confidence_threshold : `float`, Optional.
+        The segments with confidence under confidence_threshold won't be added to UEM file.
+        Defaults to keep every segment (i.e. 0.0)
+    collar: `float`, Optional.
+        Merge tracks with same label and separated by less than `collar` seconds.
+        Defaults to keep tracks timeline untouched (i.e. 0.0)
+    expected_min_speech_time: `float`, Optional.
+        Threshold (in seconds) under which the total duration of speech time is suspicious (warns the user).
+        Defaults to never suspect anything (i.e. 0.0)
+
+    Returns:
+    --------
+    annotation: pyannote `Annotation`
+        for speaker identification/diarization as defined in https://github.com/pyannote/pyannote-core
+    annotated: pyannote `Timeline`
+        representing the annotated parts of the gecko_JSON files (depends on confidence_threshold)
+    """
+    annotation = Annotation(uri, modality)
+    annotated = Timeline(uri=uri)
+    last_confident=0.0
+    last_unconfident=0.0
+    for monologue in gecko_JSON["monologues"]:
+        if monologue==[]:
+            continue
+        # '@' defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
+        # '+' defined in https://github.com/gong-io/gecko/blob/master/app/geckoModule/constants.js#L35
+        speaker_ids=re.split("@|\+",monologue["speaker"]["id"])
+        for i,term in enumerate(monologue["terms"]):
+            term["confidence"],term["start"],term["end"]=map(float,(term["confidence"],term["start"],term["end"]))
+            for speaker_id in speaker_ids:#most of the time there's only one
+                if speaker_id!='':#happens with "all@"
+                    annotation[Segment(term["start"],term["end"]),speaker_id]=speaker_id
+            if term["confidence"] <= confidence_threshold:
+                last_unconfident=term["end"]
+            else:
+                if last_unconfident < last_confident:
+                    annotated.add(Segment(last_confident,term["end"]))
+                last_confident=term["start"]
+
+    annotation=annotation.support(collar)
+    total_speech_time=annotation.crop(annotated).get_timeline().duration()
+    if total_speech_time<expected_min_speech_time:
+        warnings.warn(f"total speech time of {uri} is only {total_speech_time})")
+    return annotation, annotated.support()
 
 def gecko_JSON_to_Annotation(gecko_JSON, uri=None, modality='speaker',
     confidence_threshold=0.0, collar=0.0, expected_min_speech_time=0.0, manual=False):

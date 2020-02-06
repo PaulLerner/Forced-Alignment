@@ -6,6 +6,7 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 Usage:
     forced-alignment.py preprocess <serie_uri> <plumcot_path> [--wav_path=<wav_path> --aligned_path=<aligned_path>]
     forced-alignment.py postprocess <serie_uri> <plumcot_path> <serie_split> [options]
+    forced-alignment.py clean_UEM <serie_uri> <plumcot_path> [--conf_threshold=<conf_threshold>]
     forced-alignment.py check_files <serie_uri> <plumcot_path> [--wav_path=<wav_path> --aligned_path=<aligned_path>]
     forced-alignment.py split_regions <file_path> [--threshold]
     forced-alignment.py update_RTTM <rttm_path> <uem_path> <json_path> <file_uri>
@@ -220,6 +221,37 @@ def gecko_JSONs_to_aligned(ALIGNED_PATH):
     if file_counter==0:
         raise ValueError(f"no json files were found in {ALIGNED_PATH}")
     print("\ndone ;)")
+
+def gecko_JSONs_to_UEM(ALIGNED_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD =0.5):
+    """
+    Create a very clean UEM based on VRBS confidence on words
+    Also adds annotated parts of the files to a UEM depending on VRBS_CONFIDENCE_THRESHOLD.
+
+    Parameters:
+    -----------
+    ALIGNED_PATH : path where gecko_JSON files are stored.
+    ANNOTATED_PATH : path where to store the annotated parts of the files in UEM.
+    VRBS_CONFIDENCE_THRESHOLD : `float`, the segments with confidence under VRBS_CONFIDENCE_THRESHOLD won't be added to UEM file.
+        Defaults to 0.5
+    """
+    if os.path.exists(ANNOTATED_PATH):
+        raise ValueError(f"""{ANNOTATED_PATH} already exists.
+                         You probably don't wan't to append any more data to it.""")
+    file_counter=0
+    for i,file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
+        uri,extension=os.path.splitext(file_name)#uri should be common to xml and txt file
+        if extension==".json":
+            print("\rprocessing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="")
+            #read file, convert to annotation and write rttm
+            with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
+                gecko_JSON=json.load(file)
+            annotation,annotated=gecko_JSON_to_UEM(gecko_JSON,uri,'speaker',VRBS_CONFIDENCE_THRESHOLD)
+            with open(ANNOTATED_PATH,'a') as file:
+                annotated.write_uem(file)
+            file_counter+=1
+    if file_counter==0:
+        raise ValueError(f"no json files were found in {ALIGNED_PATH}")
+    print(f"\nDone, succefully wrote the uem file to {ANNOTATED_PATH}")
 
 def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
     VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0,expected_min_speech_time=0.0):
@@ -446,6 +478,12 @@ if __name__ == '__main__':
             if not os.path.exists(aligned_path):
                 os.mkdir(aligned_path)
             check_files(SERIE_PATH,wav_path,aligned_path=None)
+        elif args['clean_UEM']:
+            vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.5
+            annotated_path=os.path.join(aligned_path,
+                                        f"{serie_uri}_{vrbs_confidence_threshold}confidence.SAD.uem")
+
+            gecko_JSONs_to_UEM(aligned_path, annotated_path, vrbs_confidence_threshold)
         elif args['postprocess']:
             serie_split={}
             for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
