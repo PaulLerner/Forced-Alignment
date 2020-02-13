@@ -157,55 +157,6 @@ def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
         raise ValueError(f"no xml files were found in {ALIGNED_PATH}")
     print()#new line for prettier print
 
-def append_to_rttm(file: TextIO, output: Union[Timeline, Annotation]):
-        """Write pipeline output to "rttm" file
-        Parameters
-        ----------
-        file : file object
-        output : `pyannote.core.Annotation`
-            Pipeline output
-        """
-        warnings.warn("deprecated in favor of Annotation.write_rttm")
-        if isinstance(output, Annotation):
-            for s, t, l in output.itertracks(yield_label=True):
-                line = (
-                    f'SPEAKER {output.uri} 1 {s.start:.3f} {s.duration:.3f} '
-                    f'<NA> <NA> {l} <NA> <NA>\n'
-                )
-                file.write(line)
-            return
-
-        msg = (
-            f'Dumping {output.__class__.__name__} instances to "rttm" files '
-            f'is not supported.'
-        )
-        raise NotImplementedError(msg)
-
-def append_to_uem(file: TextIO, output: Timeline):
-    """Write pipeline output to "uem" file
-    Parameters
-    ----------
-    file : file object
-    output : `pyannote.core.Timeline`
-        Pipeline output
-    """
-    warnings.warn("deprecated in favor of Timeline.write_uem")
-    if isinstance(output, Timeline):
-        for segment in output:
-            line = "{} 1 {} {}\n".format(
-                output.uri,
-                segment.start,
-                segment.end
-                )
-            file.write(line)
-        return
-
-    msg = (
-        f'Dumping {output.__class__.__name__} instances to "uem" files '
-        f'is not supported.'
-    )
-    raise NotImplementedError(msg)
-
 def gecko_JSONs_to_aligned(ALIGNED_PATH):
     file_counter=0
     for i,file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
