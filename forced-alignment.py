@@ -6,7 +6,7 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 Usage:
     forced-alignment.py preprocess <serie_uri> <plumcot_path> [--wav_path=<wav_path> --aligned_path=<aligned_path>]
     forced-alignment.py postprocess <serie_uri> <plumcot_path> <serie_split> [options]
-    forced-alignment.py clean_UEM <serie_uri> <plumcot_path> [--conf_threshold=<conf_threshold>]
+    forced-alignment.py clean_UEM <serie_uri> <plumcot_path> [options]
     forced-alignment.py check_files <serie_uri> <plumcot_path> [--wav_path=<wav_path> --aligned_path=<aligned_path>]
     forced-alignment.py split_regions <file_path> [--threshold]
     forced-alignment.py update_RTTM <rttm_path> <uem_path> <json_path> <file_uri>
