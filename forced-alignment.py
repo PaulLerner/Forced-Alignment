@@ -17,9 +17,10 @@ Usage:
 Arguments:
     <serie_uri>                             One of Plumcot/data/series.txt
     <plumcot_path>                          something like /path/to/pyannote-db-plumcot
-    <serie_split>                           <test>,<dev>,<train> where <test>, <dev> and <train>
+    <serie_split>                           <test>,<dev> where <test> and <dev>
                                             are seasons number separated by '-' that should be in the data subset
-                                            e.g. : 1,2-3,4-5-6-7-8-9-10
+                                            The rest of the seasons goes to the training subset
+                                            e.g. : 1,2-3
     <wav_path>                              a priori /vol/work3/maurice/dvd_extracted/
                                             should contain a folder named <serie_uri>
                                             itself containg plenty of wav files
@@ -176,7 +177,6 @@ def gecko_JSONs_to_aligned(ALIGNED_PATH):
 def gecko_JSONs_to_UEM(ALIGNED_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD =0.5):
     """
     Create a very clean UEM based on VRBS confidence on words
-    Also adds annotated parts of the files to a UEM depending on VRBS_CONFIDENCE_THRESHOLD.
 
     Parameters:
     -----------
@@ -251,10 +251,8 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_spl
                 test_list.append(uri)
             elif season_number in serie_split["dev"]:
                 dev_list.append(uri)
-            elif season_number in serie_split["train"]:
-                train_list.append(uri)
             else:
-                raise ValueError("Expected season_number to be in {}\ngot {} instead".format(serie_split,season_number))
+                train_list.append(uri)
             file_counter+=1
     if file_counter==0:
         raise ValueError(f"no json files were found in {ALIGNED_PATH}")
@@ -437,7 +435,7 @@ if __name__ == '__main__':
             gecko_JSONs_to_UEM(aligned_path, annotated_path, vrbs_confidence_threshold)
         elif args['postprocess']:
             serie_split={}
-            for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
+            for key, set in zip(["test","dev"],args["<serie_split>"].split(",")):
                 serie_split[key]=list(map(int,set.split("-")))
             expected_min_speech_time=float(args["--expected_time"]) if args["--expected_time"] else 0.0
             vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.0
