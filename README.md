@@ -5,19 +5,23 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 
 ```
 Usage:
-    forced-alignment.py preprocess <serie_uri> <plumcot_path> [--wav_path=<wav_path>]
+    forced-alignment.py preprocess <serie_uri> <plumcot_path> [--wav_path=<wav_path> --aligned_path=<aligned_path>]
     forced-alignment.py postprocess <serie_uri> <plumcot_path> <serie_split> [options]
     forced-alignment.py -h | --help
 
 Arguments:
     <serie_uri>                             One of Plumcot/data/series.txt
     <plumcot_path>                          something like /path/to/pyannote-db-plumcot
-    <serie_split>                           <test>,<dev>,<train> where <test>, <dev> and <train>
+    <serie_split>                           <test>,<dev> where <test> and <dev>
                                             are seasons number separated by '-' that should be in the data subset
-                                            e.g. : 1,2-3,4-5-6-7-8-9-10
-    <wav_path>                              a priori /vol/work3/maurice/dvd_extracted/
+                                            The rest of the seasons goes to the training subset
+                                            e.g. : 1,2-3
+    <wav_path>                              a priori /vol/work3/lefevre/dvd_extracted/
                                             should contain a folder named <serie_uri>
                                             itself containg plenty of wav files
+
+Common options:
+    --aligned_path=<aligned_path>           Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/forced-alignment
 
 preprocess options:
     --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
@@ -26,7 +30,6 @@ preprocess options:
 
 postprocess options:
     --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
-    --aligned_path=<aligned_path>           Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/forced-alignment
     --expected_time=<expected_time>         `float`, Optional.
                                             Threshold (in seconds) under which the total duration of speech time
                                             is suspicious (warns the user).
@@ -47,7 +50,7 @@ postprocess options:
 e.g. :
 ```bash
 ./forced-alignment.py preprocess Friends /vol/work/lerner/pyannote-db-plumcot \
---wav_path=/vol/work3/maurice/dvd_extracted
+--wav_path=/vol/work3/lefevre/dvd_extracted
 ```
 
 ### Actual forced-alignment - VRBS (`forced-alignment.sh`)
@@ -76,7 +79,7 @@ Once vrbs is done you can continue with `forced-alignment.py postprocess` which 
 e.g. :
 ```bash
 ./forced-alignment.py postprocess Friends /vol/work/lerner/pyannote-db-plumcot \
-1,2-3,4-5-6-7-8-9-10 --expected_time=200 --conf_threshold=0.5 --collar=0.15
+1,2-3 --expected_time=200 --conf_threshold=0.5 --collar=0.15
 ```
 
 

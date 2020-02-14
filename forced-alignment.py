@@ -21,7 +21,7 @@ Arguments:
                                             are seasons number separated by '-' that should be in the data subset
                                             The rest of the seasons goes to the training subset
                                             e.g. : 1,2-3
-    <wav_path>                              a priori /vol/work3/maurice/dvd_extracted/
+    <wav_path>                              a priori /vol/work3/lefevre/dvd_extracted/
                                             should contain a folder named <serie_uri>
                                             itself containg plenty of wav files
     <rttm_path>                             Output of postprocess
