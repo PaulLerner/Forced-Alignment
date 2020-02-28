@@ -31,6 +31,8 @@ def xml_to_GeckoJSON(xml_root,raw_script):
     current_speaker=xml_root[3][0][0].text.strip()[1:-1]
     for i,speech_segment in enumerate(xml_root[3]):
         for word in speech_segment:
+            if word.text.isspace():
+                continue
             if word.text.strip()[0]=="[":#speaker id -> add new speaker
                 speaker={
                 "name" : None,
