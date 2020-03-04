@@ -98,6 +98,9 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
             with open(os.path.join(TRANSCRIPTS_PATH,file_name),"r") as file:
                 raw_script=file.read()
 
+            #remove brackets from raw script as they serve as speaker name placeholders
+            raw_script = re.sub('\[|\]','', raw_script)
+
             #anonymyzes the script
             bracket_raw_script=""
             for speech_turn in raw_script.split("\n"):
