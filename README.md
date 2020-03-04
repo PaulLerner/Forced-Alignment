@@ -1,6 +1,16 @@
 # Forced-Alignment
 Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbredin/pyannote-db-plumcot) using vrbs.
 
+## Installation
+
+```bash
+# from source
+git clone https://github.com/PaulLerner/Forced-Alignment.git
+cd Forced-Alignment/
+# -e makes the code editable so you don't have to 'pip install every time'
+pip install -e .
+```
+
 ## Main
 
 ```
@@ -49,7 +59,7 @@ postprocess options:
 
 e.g. :
 ```bash
-./forced-alignment.py preprocess Friends /vol/work/lerner/pyannote-db-plumcot \
+forced-alignment.py preprocess Friends /vol/work/lerner/pyannote-db-plumcot \
 --wav_path=/vol/work3/lefevre/dvd_extracted
 ```
 
@@ -78,7 +88,7 @@ Once vrbs is done you can continue with `forced-alignment.py postprocess` which 
 
 e.g. :
 ```bash
-./forced-alignment.py postprocess Friends /vol/work/lerner/pyannote-db-plumcot \
+forced-alignment.py postprocess Friends /vol/work/lerner/pyannote-db-plumcot \
 1,2-3 --expected_time=200 --conf_threshold=0.5 --collar=0.15
 ```
 
