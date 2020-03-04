@@ -75,8 +75,9 @@ from typing import TextIO,Union
 import warnings
 
 #utils
-from utils import normalize_string, do_this
-from convert import *
+from fa.utils import normalize_string, do_this
+from fa.convert import gecko_JSON_to_UEM
+from fa.convert import *
 
 #pyannote
 from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeature,SlidingWindow

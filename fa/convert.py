@@ -150,14 +150,17 @@ def gecko_JSON_to_UEM(gecko_JSON, uri=None, modality='speaker',
         # '+' defined in https://github.com/gong-io/gecko/blob/master/app/geckoModule/constants.js#L35
         speaker_ids=re.split("@|\+",monologue["speaker"]["id"])
         for i,term in enumerate(monologue["terms"]):
-            term["confidence"],term["start"],term["end"]=map(float,(term["confidence"],term["start"],term["end"]))
+            term["confidence"],term["start"],term["end"]=map(float,(term.get("confidence",0.),term["start"],term["end"]))
+            unknown=False
             for speaker_id in speaker_ids:#most of the time there's only one
+                if '#unknown#' in speaker_id:
+                    unknown = True
                 if speaker_id!='':#happens with "all@"
                     annotation[Segment(term["start"],term["end"]),speaker_id]=speaker_id
             if term["confidence"] <= confidence_threshold:
                 last_unconfident=term["end"]
             else:
-                if last_unconfident < last_confident:
+                if last_unconfident < last_confident and not unknown:
                     annotated.add(Segment(last_confident,term["end"]))
                 last_confident=term["start"]
 
