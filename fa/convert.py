@@ -25,7 +25,7 @@ def xml_to_GeckoJSON(xml_root,raw_script):
       "schemaVersion" : "2.0",
       "monologues" : [  ]
     }""")
-    gecko_json["monologues"]=[[] for _ in raw_script.split("\n")]
+    gecko_json["monologues"]=[{} for _ in raw_script.split("\n")]
     json_i=0
     terms=[]
     current_speaker=xml_root[3][0][0].text.strip()[1:-1]
