@@ -1,5 +1,5 @@
 # Forced-Alignment
-Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbredin/pyannote-db-plumcot) using vrbs.
+Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbredin/pyannote-db-plumcot) using VRBS (part of [VoxSigma](https://www.vocapia.com/voxsigma-speech-to-text.html), closed source).
 
 ## Installation
 
@@ -7,7 +7,7 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 # from source
 git clone https://github.com/PaulLerner/Forced-Alignment.git
 cd Forced-Alignment/
-# -e makes the code editable so you don't have to 'pip install every time'
+# -e makes the code editable so you don't have to 'pip install' every time you update the code
 pip install -e .
 ```
 
@@ -102,6 +102,19 @@ Type "n" or "no" (case insensitive) if you don't want to.
 
 *You're done !*
 
+### Alternative post-processing (`clean_UEM`)
+```
+Usage:
+    forced-alignment.py clean_UEM <serie_uri> <plumcot_path> [--aligned_path=<aligned_path> --conf_threshold=<conf_threshold>]
+```
+Similar to `postprocess`, altough only a new `.SAD.uem` file will be created.
+
+This UEM file will be more strict than the `postprocess` one because :
+- only parts between consecutive *confident* words are kept (depends on `conf_threshold`).
+- speaker tagged as '#unknown#' are not considered as annotated
+
+The idea is to use this UEM to train and evaluate Speech Activity Detection (SAD) systems.
+
 ## Manual correction
 ### Pre-processing for gecko (`split_regions`)
 
@@ -151,6 +164,21 @@ Arguments:
     <json_path>                             Path to the manually corrected, gecko-compliant json
     <file_uri>                              uri of the file you corrected (should match aligned_path)
 ```
+
+### Alternative to Update RTTM (`write_RTTM`)
+
+```
+Usage:
+    forced-alignment.py write_RTTM <json_path> <file_uri>
+    forced-alignment.py -h | --help
+
+Arguments:
+    <json_path>                             Path to the manually corrected, gecko-compliant json
+    <file_uri>                              uri of the file you corrected (should match aligned_path)
+```
+
+Writes a single JSON file to `.manual.rttm` and `.manual.uem` (the whole file is considered to be annotated).
+
 
 # Format
 ## XML (VRBS)
