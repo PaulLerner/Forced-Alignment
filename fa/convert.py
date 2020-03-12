@@ -97,7 +97,7 @@ def gecko_JSON_to_aligned(gecko_JSON, uri=None):
     """
     aligned=""
     for monologue in gecko_JSON["monologues"]:
-        if monologue==[]:
+        if not monologue:
             continue
 
         # '@' defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
@@ -144,7 +144,7 @@ def gecko_JSON_to_UEM(gecko_JSON, uri=None, modality='speaker',
     last_confident=0.0
     last_unconfident=0.0
     for monologue in gecko_JSON["monologues"]:
-        if monologue==[]:
+        if not monologue:
             continue
         # '@' defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
         # '+' defined in https://github.com/gong-io/gecko/blob/master/app/geckoModule/constants.js#L35
@@ -208,7 +208,7 @@ def gecko_JSON_to_Annotation(gecko_JSON, uri=None, modality='speaker',
     annotation = Annotation(uri, modality)
     not_annotated = Timeline(uri=uri)
     for monologue in gecko_JSON["monologues"]:
-        if monologue==[]:
+        if not monologue:
             continue
         # '@' defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
         # '+' defined in https://github.com/gong-io/gecko/blob/master/app/geckoModule/constants.js#L35
