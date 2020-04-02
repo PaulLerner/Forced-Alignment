@@ -4,6 +4,7 @@ import re
 import os
 from typing import TextIO,Union
 import warnings
+import string
 
 #pyannote
 from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeature,SlidingWindow
@@ -157,6 +158,9 @@ def gecko_JSON_to_UEM(gecko_JSON, uri=None, modality='speaker',
                     unknown = True
                 if speaker_id!='':#happens with "all@"
                     annotation[Segment(term["start"],term["end"]),speaker_id]=speaker_id
+            if term["text"] in string.punctuation:
+                #don't take punctuation into account in the confidence scheme
+                continue
             if term["confidence"] <= confidence_threshold:
                 last_unconfident=term["end"]
             else:
