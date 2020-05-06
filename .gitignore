@@ -107,3 +107,6 @@ venv.bak/
 
 #nfs
 .nfs*
+
+# PyCharm stuff
+.idea/
