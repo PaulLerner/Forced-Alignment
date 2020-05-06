@@ -11,6 +11,7 @@ Usage:
     forced-alignment.py split_regions <file_path> [--threshold]
     forced-alignment.py update_RTTM <rttm_path> <uem_path> <json_path> <file_uri>
     forced-alignment.py update_aligned <aligned_path> <json_path> <file_uri>
+    forced-alignment.py gecko_to_aligned <aligned_path>
     forced-alignment.py write_RTTM <json_path> <file_uri>
     forced-alignment.py -h | --help
 
@@ -414,6 +415,9 @@ if __name__ == '__main__':
         json_path=Path(args['<json_path>'])
         file_uri=args['<file_uri>']
         write_RTTM(json_path,file_uri)
+    elif args['gecko_to_aligned']:
+        aligned_path = args['<aligned_path>']
+        gecko_JSONs_to_aligned(aligned_path)
     else:
         serie_uri=args["<serie_uri>"]
         plumcot_path=args["<plumcot_path>"]
