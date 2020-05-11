@@ -66,7 +66,7 @@ def xml_to_GeckoJSON(xml_root, raw_script):
                     })
     speaker = {
         "name": None,
-        "id": current_speaker,  # first and last charcater should be []
+        "id": current_speaker,
         "vrbs_id": speech_segment.attrib['spkid']
     }
     new_monologue = {
@@ -111,7 +111,7 @@ def gecko_JSON_to_aligned(gecko_JSON, uri=None):
             for speaker_id in speaker_ids:  # most of the time there's only one
                 if speaker_id == '' or term["text"].strip() == '':
                     continue
-                aligned += f'{uri} {speaker_id} {term["start"]} {term["end"]} {term["text"].strip()} {term.get("confidence")}\n'
+                aligned += f'{uri} {speaker_id} {term["start"]:.2f} {term["end"]:.2f} {term["text"].strip()} {term.get("confidence", 0.0):.2f}\n'
     return aligned
 
 
