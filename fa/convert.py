@@ -156,7 +156,7 @@ def gecko_JSON_to_UEM(gecko_JSON, uri=None, modality='speaker',
         speaker_ids = re.split("@|\+", monologue["speaker"]["id"])
         for i, term in enumerate(monologue["terms"]):
             term["confidence"], term["start"], term["end"] = map(float, (
-            term.get("confidence", 0.), term["start"], term["end"]))
+                term.get("confidence", 0.), term["start"], term["end"]))
             unknown = False
             for speaker_id in speaker_ids:  # most of the time there's only one
                 if '#unknown#' in speaker_id:

@@ -64,122 +64,134 @@ split_regions options:
 
 from docopt import docopt
 
-#I/O
+# I/O
 import json
 import xml.etree.ElementTree as ET
 import re
 import os
 from pathlib import Path
 
-#Meta
-from typing import TextIO,Union
+# Meta
+from typing import TextIO, Union
 import warnings
 
-#utils
+# utils
 from fa.utils import normalize_string, do_this
 from fa.convert import gecko_JSON_to_UEM
 from fa.convert import *
 
-#pyannote
-from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeature,SlidingWindow
+# pyannote
+from pyannote.core import Annotation, Segment, Timeline, notebook, SlidingWindowFeature, \
+    SlidingWindow
 from pyannote.database.util import load_rttm, load_uem
 
-def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
+
+def write_brackets(SERIE_PATH, TRANSCRIPTS_PATH):
     """
     Puts brackets around the [speaker_id] (first token of each line of the script) in the scripts
     Also writes a file with all the file uris in SERIE_PATH/file_list.txt
     """
-    file_counter=0
-    file_list=[]
+    file_counter = 0
+    file_list = []
     for file_name in sorted(os.listdir(TRANSCRIPTS_PATH)):
-        file_uri,extension=os.path.splitext(file_name)
-        if extension==".txt":
-            file_list.append(file_uri)#keep a list for qsub on m107
+        file_uri, extension = os.path.splitext(file_name)
+        if extension == ".txt":
+            file_list.append(file_uri)  # keep a list for qsub on m107
 
-            #open file
-            with open(os.path.join(TRANSCRIPTS_PATH,file_name),"r") as file:
-                raw_script=file.read()
+            # open file
+            with open(os.path.join(TRANSCRIPTS_PATH, file_name), "r") as file:
+                raw_script = file.read()
 
-            #remove brackets from raw script as they serve as speaker name placeholders
-            raw_script = re.sub('\[|\]','', raw_script)
+            # remove brackets from raw script as they serve as speaker name placeholders
+            raw_script = re.sub('\[|\]', '', raw_script)
 
-            #anonymyzes the script
-            bracket_raw_script=""
+            # anonymyzes the script
+            bracket_raw_script = ""
             for speech_turn in raw_script.split("\n"):
                 if speech_turn != '':
-                    first_space=speech_turn.find(" ")
-                    #no space -> speaker who doesn't say anything -> useless
+                    first_space = speech_turn.find(" ")
+                    # no space -> speaker who doesn't say anything -> useless
                     if first_space < 0:
                         continue
-                    bracket_raw_script+="["+speech_turn[:first_space]+"]"+speech_turn[first_space:]+"\n"
+                    bracket_raw_script += "[" + speech_turn[
+                                                :first_space] + "]" + speech_turn[
+                                                                      first_space:] + "\n"
 
-            #writes back anonymized script .anonymous
-            anonymous_path=os.path.join(TRANSCRIPTS_PATH,file_uri+".brackets")
-            print("\rWriting file #{} to {}".format(file_counter,anonymous_path),end="")
-            with open(anonymous_path,"w") as file:
+            # writes back anonymized script .anonymous
+            anonymous_path = os.path.join(TRANSCRIPTS_PATH, file_uri + ".brackets")
+            print("\rWriting file #{} to {}".format(file_counter, anonymous_path), end="")
+            with open(anonymous_path, "w") as file:
                 file.write(bracket_raw_script)
-            file_counter+=1
-    if file_counter==0:
+            file_counter += 1
+    if file_counter == 0:
         raise ValueError(f"no txt files were found in {TRANSCRIPTS_PATH}")
-    with open(os.path.join(SERIE_PATH,"file_list.txt"),"w") as file:
-        file.write("\n".join(file_list)    )
-    print("\nsuccesfully wrote file list to",os.path.join(SERIE_PATH,"file_list.txt"))
+    with open(os.path.join(SERIE_PATH, "file_list.txt"), "w") as file:
+        file.write("\n".join(file_list))
+    print("\nsuccesfully wrote file list to", os.path.join(SERIE_PATH, "file_list.txt"))
 
-XML_END=["</SegmentList>","</AudioDoc>"]
 
-def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
+XML_END = ["</SegmentList>", "</AudioDoc>"]
+
+
+def write_id_aligned(ALIGNED_PATH, TRANSCRIPTS_PATH):
     """
     writes json files as defined in functions xml_to_GeckoJSON and aligned_to_id
     """
-    file_counter=0
+    file_counter = 0
     for file_name in sorted(os.listdir(ALIGNED_PATH)):
-        file_uri,extension=os.path.splitext(file_name)#file_uri should be common to xml and txt file
-        if extension==".xml":
-            with open(os.path.join(TRANSCRIPTS_PATH,file_uri+".txt"),"r") as file:
-                raw_script=file.read()
-            with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
-                raw_xml=file.read()
-                raw_xml=raw_xml.strip()
-                if raw_xml.split("\n")[-2:]!=XML_END:
+        file_uri, extension = os.path.splitext(
+            file_name)  # file_uri should be common to xml and txt file
+        if extension == ".xml":
+            with open(os.path.join(TRANSCRIPTS_PATH, file_uri + ".txt"), "r") as file:
+                raw_script = file.read()
+            with open(os.path.join(ALIGNED_PATH, file_name), "r") as file:
+                raw_xml = file.read()
+                raw_xml = raw_xml.strip()
+                if raw_xml.split("\n")[-2:] != XML_END:
                     warnings.warn(f"{file_name} didn't close it's xml properly")
-                    #print(raw_xml.split("\n")[-2:],XML_END)
-                    raw_xml+="\n".join(XML_END)
+                    # print(raw_xml.split("\n")[-2:],XML_END)
+                    raw_xml += "\n".join(XML_END)
             try:
-                xml_tree=ET.ElementTree(ET.fromstring(raw_xml))
+                xml_tree = ET.ElementTree(ET.fromstring(raw_xml))
             except ET.ParseError as e:
                 warnings.warn(
                     f"\nxml.etree.ElementTree.ParseError: {e} "
                     f"\nThis happened with {file_name}, skipping to next file"
-                    )
+                )
                 continue
             xml_root = xml_tree.getroot()
-            gecko_json=xml_to_GeckoJSON(xml_root,raw_script)
-            json_path=os.path.join(ALIGNED_PATH,file_uri+".json")
-            print("\rWriting file #{} to {}".format(file_counter,json_path),end="")
-            file_counter+=1
-            with open(json_path,"w") as file:
-                json.dump(gecko_json,file,indent=4)
-    if file_counter==0:
+            gecko_json = xml_to_GeckoJSON(xml_root, raw_script)
+            json_path = os.path.join(ALIGNED_PATH, file_uri + ".json")
+            print("\rWriting file #{} to {}".format(file_counter, json_path), end="")
+            file_counter += 1
+            with open(json_path, "w") as file:
+                json.dump(gecko_json, file, indent=4)
+    if file_counter == 0:
         raise ValueError(f"no xml files were found in {ALIGNED_PATH}")
-    print()#new line for prettier print
+    print()  # new line for prettier print
+
 
 def gecko_JSONs_to_aligned(ALIGNED_PATH):
-    file_counter=0
-    for i,file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
-        uri,extension=os.path.splitext(file_name)#uri should be common to xml and txt file
-        if extension==".json":
-            print("\rprocessing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="")
-            file_counter+=1
-            with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
-                gecko_JSON=json.load(file)
-            aligned=gecko_JSON_to_aligned(gecko_JSON,uri)
-            with open(os.path.join(ALIGNED_PATH,uri+".aligned"),'w') as file:
+    file_counter = 0
+    for i, file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
+        uri, extension = os.path.splitext(
+            file_name)  # uri should be common to xml and txt file
+        if extension == ".json":
+            print("\rprocessing file #{} from {}".format(file_counter,
+                                                         os.path.join(ALIGNED_PATH,
+                                                                      file_name)), end="")
+            file_counter += 1
+            with open(os.path.join(ALIGNED_PATH, file_name), "r") as file:
+                gecko_JSON = json.load(file)
+            aligned = gecko_JSON_to_aligned(gecko_JSON, uri)
+            with open(os.path.join(ALIGNED_PATH, uri + ".aligned"), 'w') as file:
                 file.write(aligned)
-    if file_counter==0:
+    if file_counter == 0:
         raise ValueError(f"no json files were found in {ALIGNED_PATH}")
     print("\ndone ;)")
 
-def gecko_JSONs_to_UEM(ALIGNED_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD =0.5):
+
+def gecko_JSONs_to_UEM(ALIGNED_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD=0.5):
     """
     Create a very clean UEM based on VRBS confidence on words
 
@@ -193,24 +205,30 @@ def gecko_JSONs_to_UEM(ALIGNED_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD =
     if os.path.exists(ANNOTATED_PATH):
         raise ValueError(f"""{ANNOTATED_PATH} already exists.
                          You probably don't wan't to append any more data to it.""")
-    file_counter=0
-    for i,file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
-        uri,extension=os.path.splitext(file_name)#uri should be common to xml and txt file
-        if extension==".json":
-            print("\rprocessing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="")
-            #read file, convert to annotation and write rttm
-            with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
-                gecko_JSON=json.load(file)
-            annotation,annotated=gecko_JSON_to_UEM(gecko_JSON,uri,'speaker',VRBS_CONFIDENCE_THRESHOLD)
-            with open(ANNOTATED_PATH,'a') as file:
+    file_counter = 0
+    for i, file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
+        uri, extension = os.path.splitext(
+            file_name)  # uri should be common to xml and txt file
+        if extension == ".json":
+            print("\rprocessing file #{} from {}".format(file_counter,
+                                                         os.path.join(ALIGNED_PATH,
+                                                                      file_name)), end="")
+            # read file, convert to annotation and write rttm
+            with open(os.path.join(ALIGNED_PATH, file_name), "r") as file:
+                gecko_JSON = json.load(file)
+            annotation, annotated = gecko_JSON_to_UEM(gecko_JSON, uri, 'speaker',
+                                                      VRBS_CONFIDENCE_THRESHOLD)
+            with open(ANNOTATED_PATH, 'a') as file:
                 annotated.write_uem(file)
-            file_counter+=1
-    if file_counter==0:
+            file_counter += 1
+    if file_counter == 0:
         raise ValueError(f"no json files were found in {ALIGNED_PATH}")
     print(f"\nDone, succefully wrote the uem file to {ANNOTATED_PATH}")
 
+
 def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-    VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0,expected_min_speech_time=0.0):
+                        VRBS_CONFIDENCE_THRESHOLD=0.0, FORCED_ALIGNMENT_COLLAR=0.0,
+                        expected_min_speech_time=0.0):
     """
     Converts gecko_JSON files to RTTM using pyannote `Annotation`.
     Also keeps a track of files in train, dev and test sets.
@@ -234,54 +252,61 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_spl
         raise ValueError("""{} already exists.
                          You probably don't wan't to append any more data to it.
                          If you do, remove this if statement.""".format(ANNOTATED_PATH))
-    file_counter=0
-    train_list,dev_list,test_list=[],[],[]#keep track of file name used for train, dev and test sets
-    for i,file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
-        uri,extension=os.path.splitext(file_name)#uri should be common to xml and txt file
-        if extension==".json":
-            print("\rprocessing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="")
-            #read file, convert to annotation and write rttm
-            with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
-                gecko_JSON=json.load(file)
-            annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',
-                VRBS_CONFIDENCE_THRESHOLD,FORCED_ALIGNMENT_COLLAR,
-                expected_min_speech_time, manual=False)
-            with open(ANNOTATION_PATH,'a') as file:
+    file_counter = 0
+    train_list, dev_list, test_list = [], [], []  # keep track of file name used for train, dev and test sets
+    for i, file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
+        uri, extension = os.path.splitext(
+            file_name)  # uri should be common to xml and txt file
+        if extension == ".json":
+            print("\rprocessing file #{} from {}".format(file_counter,
+                                                         os.path.join(ALIGNED_PATH,
+                                                                      file_name)), end="")
+            # read file, convert to annotation and write rttm
+            with open(os.path.join(ALIGNED_PATH, file_name), "r") as file:
+                gecko_JSON = json.load(file)
+            annotation, annotated = gecko_JSON_to_Annotation(gecko_JSON, uri, 'speaker',
+                                                             VRBS_CONFIDENCE_THRESHOLD,
+                                                             FORCED_ALIGNMENT_COLLAR,
+                                                             expected_min_speech_time,
+                                                             manual=False)
+            with open(ANNOTATION_PATH, 'a') as file:
                 annotation.write_rttm(file)
-            with open(ANNOTATED_PATH,'a') as file:
+            with open(ANNOTATED_PATH, 'a') as file:
                 annotated.write_uem(file)
-            #train dev or test ?
-            season_number=int(re.findall(r'\d+', file_name.split(".")[1])[0])
+            # train dev or test ?
+            season_number = int(re.findall(r'\d+', file_name.split(".")[1])[0])
             if season_number in serie_split["test"]:
                 test_list.append(uri)
             elif season_number in serie_split["dev"]:
                 dev_list.append(uri)
             else:
                 train_list.append(uri)
-            file_counter+=1
-    if file_counter==0:
+            file_counter += 1
+    if file_counter == 0:
         raise ValueError(f"no json files were found in {ALIGNED_PATH}")
-    with open(os.path.join(SERIE_PATH,"train_list.lst"),"w") as file:
+    with open(os.path.join(SERIE_PATH, "train_list.lst"), "w") as file:
         file.write("\n".join(train_list))
-    with open(os.path.join(SERIE_PATH,"dev_list.lst"),"w") as file:
+    with open(os.path.join(SERIE_PATH, "dev_list.lst"), "w") as file:
         file.write("\n".join(dev_list))
-    with open(os.path.join(SERIE_PATH,"test_list.lst"),"w") as file:
+    with open(os.path.join(SERIE_PATH, "test_list.lst"), "w") as file:
         file.write("\n".join(test_list))
-    print("\nDone, succefully wrote the rttm file to {}\n and the uem file to {}".format(ANNOTATION_PATH,ANNOTATED_PATH))
+    print("\nDone, succefully wrote the rttm file to {}\n and the uem file to {}".format(
+        ANNOTATION_PATH, ANNOTATED_PATH))
 
-def check_files(SERIE_PATH,wav_path,aligned_path):
-    with open(os.path.join(SERIE_PATH,"file_list.txt"),'r') as file:
-        file_list=set(file.read().split("\n"))
-    with open(os.path.join(SERIE_PATH,"episodes.txt"),'r') as file:
-        episodes=file.read().split("\n")
-        episodes=set([episode.split(',')[0] for episode in episodes])
+
+def check_files(SERIE_PATH, wav_path, aligned_path):
+    with open(os.path.join(SERIE_PATH, "file_list.txt"), 'r') as file:
+        file_list = set(file.read().split("\n"))
+    with open(os.path.join(SERIE_PATH, "episodes.txt"), 'r') as file:
+        episodes = file.read().split("\n")
+        episodes = set([episode.split(',')[0] for episode in episodes])
     if wav_path:
-        wav_uris=[]
+        wav_uris = []
         for file_name in sorted(os.listdir(wav_path)):
-            uri,extension=os.path.splitext(os.path.splitext(file_name)[0])
+            uri, extension = os.path.splitext(os.path.splitext(file_name)[0])
             if extension == '.en16kHz':
                 wav_uris.append(uri)
-        wav_uris=set(wav_uris)
+        wav_uris = set(wav_uris)
         if file_list - wav_uris:
             warnings.warn(
                 f'{sorted(file_list - wav_uris)} are not in {wav_path} '
@@ -295,12 +320,12 @@ def check_files(SERIE_PATH,wav_path,aligned_path):
     else:
         warnings.warn("--wav_path was not specified.")
     if aligned_path:
-        aligned_uris=[]
+        aligned_uris = []
         for file_name in sorted(os.listdir(aligned_path)):
-            uri,extension=os.path.splitext(file_name)
+            uri, extension = os.path.splitext(file_name)
             if extension == '.xml':
                 aligned_uris.append(uri)
-        aligned_uris=set(aligned_uris)
+        aligned_uris = set(aligned_uris)
         if file_list - aligned_uris:
             warnings.warn(
                 f'{sorted(file_list - aligned_uris)} are not in {aligned_path} '
@@ -325,27 +350,28 @@ def check_files(SERIE_PATH,wav_path,aligned_path):
         )
     print("Done checking files. (No warning means everything is okay.)")
 
-def split_regions(file_path,threshold):
-    with open(file_path,'r') as file:
-        gecko_json=json.load(file)
+
+def split_regions(file_path, threshold):
+    with open(file_path, 'r') as file:
+        gecko_json = json.load(file)
     for i, monologue in enumerate(gecko_json['monologues']):
-        terms=monologue["terms"]
+        terms = monologue["terms"]
         for j, term in enumerate(terms):
-            if j+1 < len(terms):#next term exists
-                if terms[j+1]['start']-term['end']>threshold:
-                    #split monologue in two
-                    new_monologue={
-                        "speaker":monologue["speaker"],
-                        "terms":terms[j+1:]
+            if j + 1 < len(terms):  # next term exists
+                if terms[j + 1]['start'] - term['end'] > threshold:
+                    # split monologue in two
+                    new_monologue = {
+                        "speaker": monologue["speaker"],
+                        "terms": terms[j + 1:]
                     }
-                    gecko_json['monologues'][i]["terms"]=terms[:j+1]
-                    gecko_json['monologues'].insert(i+1,new_monologue)
+                    gecko_json['monologues'][i]["terms"] = terms[:j + 1]
+                    gecko_json['monologues'].insert(i + 1, new_monologue)
                     break
-    dir_path,file_name=os.path.split(file_path)
-    file_uri,_=os.path.splitext(file_name)
-    new_path=os.path.join(dir_path,f'{file_uri}.{threshold}.json')
-    with open(new_path,'w') as file:
-        json.dump(gecko_json,file,indent=4)
+    dir_path, file_name = os.path.split(file_path)
+    file_uri, _ = os.path.splitext(file_name)
+    new_path = os.path.join(dir_path, f'{file_uri}.{threshold}.json')
+    with open(new_path, 'w') as file:
+        json.dump(gecko_json, file, indent=4)
     print(f"succesfully dumped {new_path}")
 
 
@@ -353,17 +379,18 @@ def update_RTTM(rttm_path, uem_path, json_path, file_uri):
     if file_uri not in json_path:
         warnings.warn(f"replacing {file_uri} in RTTM by {json_path}")
     print("loading RTTM...")
-    rttm=load_rttm(rttm_path)
+    rttm = load_rttm(rttm_path)
     print("loading UEM...")
-    uem=load_uem(uem_path)
+    uem = load_uem(uem_path)
 
     with open(json_path, 'r') as file:
-        gecko_JSON=json.load(file)
-    annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON, file_uri, 'speaker', manual=True)
-    rttm[file_uri]=annotation
-    uem[file_uri]=annotated
+        gecko_JSON = json.load(file)
+    annotation, annotated = gecko_JSON_to_Annotation(gecko_JSON, file_uri, 'speaker',
+                                                     manual=True)
+    rttm[file_uri] = annotation
+    uem[file_uri] = annotated
     print("writing updated RTTM...")
-    with open(rttm_path,'w') as file:
+    with open(rttm_path, 'w') as file:
         for annotation in rttm.values():
             annotation.write_rttm(file)
     print("writing updated UEM...")
@@ -372,93 +399,112 @@ def update_RTTM(rttm_path, uem_path, json_path, file_uri):
             annotated.write_uem(file)
     print(f"succesfully dumped {rttm_path} and {uem_path}")
 
+
 def write_RTTM(json_path, file_uri):
-    rttm_path=Path(json_path.parent,f"{file_uri}.manual.rttm")
-    uem_path=Path(json_path.parent,f"{file_uri}.manual.uem")
+    rttm_path = Path(json_path.parent, f"{file_uri}.manual.rttm")
+    uem_path = Path(json_path.parent, f"{file_uri}.manual.uem")
     with open(json_path, 'r') as file:
-        gecko_JSON=json.load(file)
-    annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON, file_uri, 'speaker', manual=True)
-    with open(rttm_path,'w') as file:
+        gecko_JSON = json.load(file)
+    annotation, annotated = gecko_JSON_to_Annotation(gecko_JSON, file_uri, 'speaker',
+                                                     manual=True)
+    with open(rttm_path, 'w') as file:
         annotation.write_rttm(file)
     with open(uem_path, 'w') as file:
         annotated.write_uem(file)
     print(f"succesfully dumped {rttm_path} and {uem_path}")
 
+
 def update_aligned(aligned_path, json_path, file_uri):
     if file_uri not in json_path:
         warnings.warn(f"replacing {aligned_path} by {json_path}")
     with open(json_path, 'r') as file:
-        gecko_JSON=json.load(file)
-    aligned=gecko_JSON_to_aligned(gecko_JSON,file_uri)
-    with open(aligned_path,'w') as file:
+        gecko_JSON = json.load(file)
+    aligned = gecko_JSON_to_aligned(gecko_JSON, file_uri)
+    with open(aligned_path, 'w') as file:
         file.write(aligned)
     print(f"succesfully dumped {aligned_path}")
+
 
 if __name__ == '__main__':
     args = docopt(__doc__)
     if args['split_regions']:
-        file_path=args['<file_path>']
-        threshold=float(args["--threshold"]) if args["--threshold"] else 0.15
-        split_regions(file_path,threshold)
+        file_path = args['<file_path>']
+        threshold = float(args["--threshold"]) if args["--threshold"] else 0.15
+        split_regions(file_path, threshold)
     elif args['update_RTTM']:
-        rttm_path=args['<rttm_path>']
-        uem_path=args['<uem_path>']
-        json_path=args['<json_path>']
-        file_uri=args['<file_uri>']
+        rttm_path = args['<rttm_path>']
+        uem_path = args['<uem_path>']
+        json_path = args['<json_path>']
+        file_uri = args['<file_uri>']
         update_RTTM(rttm_path, uem_path, json_path, file_uri)
     elif args['update_aligned']:
-        aligned_path=args['<aligned_path>']
-        json_path=args['<json_path>']
-        file_uri=args['<file_uri>']
+        aligned_path = args['<aligned_path>']
+        json_path = args['<json_path>']
+        file_uri = args['<file_uri>']
         update_aligned(aligned_path, json_path, file_uri)
     elif args['write_RTTM']:
-        json_path=Path(args['<json_path>'])
-        file_uri=args['<file_uri>']
-        write_RTTM(json_path,file_uri)
+        json_path = Path(args['<json_path>'])
+        file_uri = args['<file_uri>']
+        write_RTTM(json_path, file_uri)
     elif args['gecko_to_aligned']:
         aligned_path = args['<aligned_path>']
         gecko_JSONs_to_aligned(aligned_path)
     else:
-        serie_uri=args["<serie_uri>"]
-        plumcot_path=args["<plumcot_path>"]
-        SERIE_PATH=os.path.join(plumcot_path,"Plumcot","data",serie_uri)
-        transcripts_path=args["--transcripts_path"] if args["--transcripts_path"] else os.path.join(SERIE_PATH,"transcripts")
-        aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
+        serie_uri = args["<serie_uri>"]
+        plumcot_path = args["<plumcot_path>"]
+        SERIE_PATH = os.path.join(plumcot_path, "Plumcot", "data", serie_uri)
+        transcripts_path = args["--transcripts_path"] if args[
+            "--transcripts_path"] else os.path.join(SERIE_PATH, "transcripts")
+        aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(
+            SERIE_PATH, "forced-alignment")
         if args['check_files']:
-            wav_path=os.path.join(args['--wav_path'],serie_uri) if args['--wav_path'] else None
-            check_files(SERIE_PATH,wav_path,aligned_path)
+            wav_path = os.path.join(args['--wav_path'], serie_uri) if args[
+                '--wav_path'] else None
+            check_files(SERIE_PATH, wav_path, aligned_path)
         elif args['preprocess']:
             print("adding brackets around speakers id")
-            write_brackets(SERIE_PATH,transcripts_path)
+            write_brackets(SERIE_PATH, transcripts_path)
             print("done, you should now launch vrbs before converting")
-            wav_path=os.path.join(args['--wav_path'],serie_uri) if args['--wav_path'] else None
+            wav_path = os.path.join(args['--wav_path'], serie_uri) if args[
+                '--wav_path'] else None
             if not os.path.exists(aligned_path):
                 os.mkdir(aligned_path)
-            check_files(SERIE_PATH,wav_path,aligned_path=None)
+            check_files(SERIE_PATH, wav_path, aligned_path=None)
         elif args['clean_UEM']:
-            vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.5
-            annotated_path=os.path.join(aligned_path,
-                                        f"{serie_uri}_{vrbs_confidence_threshold}confidence.SAD.uem")
+            vrbs_confidence_threshold = float(args["--conf_threshold"]) if args[
+                "--conf_threshold"] else 0.5
+            annotated_path = os.path.join(aligned_path,
+                                          f"{serie_uri}_{vrbs_confidence_threshold}confidence.SAD.uem")
 
             gecko_JSONs_to_UEM(aligned_path, annotated_path, vrbs_confidence_threshold)
         elif args['postprocess']:
-            serie_split={}
-            for key, set in zip(["test","dev"],args["<serie_split>"].split(",")):
-                serie_split[key]=list(map(int,set.split("-")))
-            expected_min_speech_time=float(args["--expected_time"]) if args["--expected_time"] else 0.0
-            vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.0
-            forced_alignment_collar=float(args["--collar"]) if args["--collar"] else 0.0
-            annotation_path=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
-            annotated_path=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
+            serie_split = {}
+            for key, set in zip(["test", "dev"], args["<serie_split>"].split(",")):
+                serie_split[key] = list(map(int, set.split("-")))
+            expected_min_speech_time = float(args["--expected_time"]) if args[
+                "--expected_time"] else 0.0
+            vrbs_confidence_threshold = float(args["--conf_threshold"]) if args[
+                "--conf_threshold"] else 0.0
+            forced_alignment_collar = float(args["--collar"]) if args["--collar"] else 0.0
+            annotation_path = os.path.join(aligned_path,
+                                           "{}_{}collar.rttm".format(serie_uri,
+                                                                     forced_alignment_collar))
+            annotated_path = os.path.join(aligned_path,
+                                          "{}_{}confidence.uem".format(serie_uri,
+                                                                       vrbs_confidence_threshold))
 
-            print("converting vrbs.xml to vrbs.json and adding proper id to vrbs alignment")
-            write_id_aligned(aligned_path,transcripts_path)
+            print(
+                "converting vrbs.xml to vrbs.json and adding proper id to vrbs alignment")
+            write_id_aligned(aligned_path, transcripts_path)
             if do_this("Would you like to convert annotations from gecko_JSON to RTTM ?"):
-                gecko_JSONs_to_RTTM(aligned_path, annotation_path, annotated_path, serie_split,
-                 vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
+                gecko_JSONs_to_RTTM(aligned_path, annotation_path, annotated_path,
+                                    serie_split,
+                                    vrbs_confidence_threshold, forced_alignment_collar,
+                                    expected_min_speech_time)
             else:
                 print("Okay, no hard feelings")
-            if do_this("Would you like to convert annotations from gecko_JSON to LIMSI-compliant 'aligned' ?"):
+            if do_this(
+                    "Would you like to convert annotations from gecko_JSON to LIMSI-compliant 'aligned' ?"):
                 gecko_JSONs_to_aligned(aligned_path)
             else:
                 print("Okay then you're done ;)")

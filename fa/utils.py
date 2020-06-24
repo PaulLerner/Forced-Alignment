@@ -2,11 +2,12 @@ def normalize_string(string):
     """
     Lowercases and removes punctuation from input string, also strips the spaces from the borders and removes multiple spaces
     """
-    string =re.sub(r"([,.!?'-:])", r"", string).lower()
-    string = re.sub(' +', ' ',string).strip()
+    string = re.sub(r"([,.!?'-:])", r"", string).lower()
+    string = re.sub(' +', ' ', string).strip()
     return string
 
-def do_this(display="",defaults_to_yes=True):
+
+def do_this(display="", defaults_to_yes=True):
     """
     Parameters:
     -----------
@@ -17,8 +18,8 @@ def do_this(display="",defaults_to_yes=True):
     --------
     True if the user wants to do it, else False.
     """
-    answer=input("{} {}".format(display,"[Y]/N" if defaults_to_yes else "Y/[N]"))
-    answer=answer.lower().strip()
+    answer = input("{} {}".format(display, "[Y]/N" if defaults_to_yes else "Y/[N]"))
+    answer = answer.lower().strip()
     if defaults_to_yes:
         if answer != 'n' and answer != 'no':
             return True
